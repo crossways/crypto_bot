@@ -13,6 +13,13 @@ services:
     networks:
       - crypto_bot_network
 
+  timescaledb-primary:
+    image: timescale/timescaledb:2.12.1-pg13
+    environment:
+      POSTGRES_PASSWORD: password
+    networks:
+      - crypto_bot_network
+
 networks:
   crypto_bot_network:
     external: true
