@@ -13,6 +13,20 @@ services:
     networks:
       - crypto_bot_network
 
+  fastapi_server:
+    build:
+      context: ./services/fast_api
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    volumes:
+      - ./configs/config.yml:/app/config.yml:ro
+      - ./logs/crypto_bot.log:/app/logs/crypto_bot.log:rw
+    ports:
+      - "8000:8000"
+    networks:
+      - crypto_bot_network
+    restart: always
+
 networks:
   crypto_bot_network:
     external: true
