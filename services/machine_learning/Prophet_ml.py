@@ -95,4 +95,15 @@ plt.grid()
 plt.show()
 
 
+# Select relevant forecast data
+forecast_output = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+
+# Define file path
+output_path = "services/machine_learning/src/forecast_Prophet.csv"
+
+# Save to CSV
+forecast_output.to_csv(output_path, index=False)
+
+print(f"Forecast results saved to {output_path}")
+
 

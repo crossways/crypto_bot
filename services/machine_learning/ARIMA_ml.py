@@ -12,15 +12,15 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import math
 
 stock_data = pd.read_json("../../sample_data/LINKUSDT_1d.json")
-stock_data
+
 
 stock_data["Date"] = pd.to_datetime(stock_data["open time"],unit='ms')
 stock_data.index = stock_data["Date"]
 # stock_data.index = pd.DatetimeIndex(stock_data.index).to_period('D')
-stock_data
+
 
 stock_data.drop(columns=['open time', 'close time', 'delete', 'Date'], inplace=True)
-stock_data
+
 
 #plot close price
 plt.figure(figsize=(10,6))
@@ -164,3 +164,17 @@ print('MAPE: ' + str(mape))
 
 
 
+# Create DataFrame for performance metrics
+metrics = pd.DataFrame({
+    'Metric': ['MSE', 'MAE', 'RMSE', 'MAPE'],
+    'Value': [mse, mae, rmse, mape]
+})
+
+# Define output file path
+output_path = "services/machine_learning/src/forecast_ARIMA_results.csv"
+metrics_output_path = "performance_metrics.csv"
+
+# Save metrics to CSV
+metrics.to_csv(output_path, index=False)
+
+print(f"Performance metrics saved to {output_path}")
