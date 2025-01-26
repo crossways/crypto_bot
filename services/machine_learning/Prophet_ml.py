@@ -1,109 +1,35 @@
-import os
+import pandas as pd
+import json
+import requests
 import warnings
 warnings.filterwarnings('ignore')
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from statsmodels.tsa.stattools import adfuller
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-import math
 
-stock_data = pd.read_json("Desktop/LINKUSDT_1d 2.json")
-stock_data
-
-stock_data["Date"] = pd.to_datetime(stock_data["open time"],unit='ms')
-stock_data.index = stock_data["Date"]
-# stock_data.index = pd.DatetimeIndex(stock_data.index).to_period('D')
-stock_data
-
-stock_data.drop(columns=['open time', 'close time', 'delete', 'Date'], inplace=True)
-stock_data
-
-from scipy import stats
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import seaborn as sns
 from prophet import Prophet
-
-stock_data.head()
-
-stock_data.drop(['open','DATE_FROM','high',
-                    'low','volume','quote asset volume',
-                    'number of trades','taker buy base asset volume','taker buy quote asset volume'], axis = 1, inplace = True, errors = 'ignore')
-stock_data.head()
-
-stock_data['ds'] = stock_data.index
-stock_data.head()
-
-stock_data['y'] =stock_data.close	
-
-yy=stock_data[['ds','close']].tail(16)
-
-yy
-
-m = Prophet()
+from joblib import dump
 
 
-m.fit(stock_data)
+def train_model(symbol, target_interval):
+    req = requests.get(f"http://127.0.0.1:8000/candlesticks/{symbol}/{target_interval}")
 
-future = m.make_future_dataframe(periods=365)
-future.tail()
+    stock_data = pd.DataFrame(json.loads(req.content.decode()))
+    stock_data['ds'] = pd.to_datetime(stock_data["open_time"])
+    stock_data['ds'] = stock_data['ds'].dt.tz_localize(None)
+    stock_data['y'] = stock_data.close
+    stock_data.drop(columns=['open_time', 'open', 'close', 'high', 'low', 'number_of_trades'], inplace=True)
 
-forecast = m.predict(future)
+    m = Prophet()
+    m.fit(stock_data)
 
+    return m
 
-forecast[['ds' ,'yhat','yhat_lower', 'yhat_upper']].tail()
-
-a = forecast[(forecast.ds >= '2020-01-16') & (forecast.ds < '2024-11-10')]
-
-a[['ds', 'yhat','yhat_lower', 'yhat_upper']].tail(30)
-
-m.plot(forecast)
-
-m.plot_components(forecast)
-
+def save_model(m, target_interval):
+    dump(m, f'../../ml_models/prophet_model_{target_interval}.joblib')
 
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-import numpy as np
+if __name__ == '__main__':
+    symbol = "LINKUSDT"
+    target_interval = "15m"
 
-# Ensure the forecast dataframe has predictions for the test period
-# Use only dates present in the dataset for comparison
-test_data = stock_data[(stock_data['ds'] >= '2020-01-16') & (stock_data['ds'] < '2024-11-10')]
+    m = train_model(symbol, target_interval)
 
-# Merge actuals with predictions
-results = pd.merge(test_data[['ds', 'y']], forecast[['ds', 'yhat']], on='ds')
-
-# Calculate error metrics
-mae = mean_absolute_error(results['y'], results['yhat'])
-mse = mean_squared_error(results['y'], results['yhat'])
-rmse = np.sqrt(mse)
-
-print(f"Mean Absolute Error (MAE): {mae}")
-print(f"Mean Squared Error (MSE): {mse}")
-print(f"Root Mean Squared Error (RMSE): {rmse}")
-
-# Optional: Plot actual vs predicted values
-plt.figure(figsize=(10, 6))
-plt.plot(results['ds'], results['y'], label='Actual')
-plt.plot(results['ds'], results['yhat'], label='Predicted')
-plt.legend()
-plt.title('Actual vs Predicted')
-plt.xlabel('Date')
-plt.ylabel('Close Price')
-plt.grid()
-plt.show()
-
-
-# Select relevant forecast data
-forecast_output = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
-
-# Define file path
-output_path = "services/machine_learning/src/forecast_Prophet.csv"
-
-# Save to CSV
-forecast_output.to_csv(output_path, index=False)
-
-print(f"Forecast results saved to {output_path}")
-
-
+    save_model(m, target_interval)
