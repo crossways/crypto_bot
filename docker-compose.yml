@@ -21,6 +21,7 @@ services:
     volumes:
       - ./configs/config.yml:/app/config.yml:ro
       - ./logs/crypto_bot.log:/app/logs/crypto_bot.log:rw
+      - ./ml_models:/app/ml_models:ro
     ports:
       - "8000:8000"
     networks:
