@@ -1,5 +1,6 @@
 import re
 
+from typing import Optional
 from io import StringIO
 
 
@@ -57,14 +58,19 @@ class PostgresOperations:
 
         return intervals
 
-    def get_candlestick_data(self, conn, symbol: str, target_interval: str, interval: str):
+    def get_candlestick_data(self, conn, symbol: str, target_interval: str, interval: str, start_date: Optional[str]):
         """
         Creates a SQL statement for TimescaleDB that performs:
           - Aggregation on a chosen time bucket (e.g., '5 minutes')
           - Joins the 'candlesticks' table to 'trading_pairs'
           - Filters by the given symbol and an available interval
+          - Optional start_date to query data starting at giving date
         """
         target_interval = self.build_time_bucket_part(target_interval)
+
+        timestamp_condition = ""
+        if start_date:
+            timestamp_condition = f"AND timestamp > '{start_date}'"
 
         query = f"""
         SELECT json_agg(
@@ -93,6 +99,7 @@ class PostgresOperations:
             WHERE
                 t2.symbol = '{symbol}'
                 AND t2.interval = '{interval}'
+                {timestamp_condition}
             GROUP BY bucket_time
             ORDER BY bucket_time
         ) AS sub;

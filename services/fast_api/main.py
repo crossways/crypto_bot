@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Query
 from pathlib import Path
+from datetime import date
+from typing import Optional
 
 from src.config.config_loader import load_config
 from src.db.database_handler import connect_to_database
@@ -26,7 +28,7 @@ def check_availability():
 
 
 @api.get("/candlesticks/{symbol}/{target_interval}", tags=['candlestick'])
-def get_candlesticks(symbol: str, target_interval: str):
+def get_candlesticks(symbol: str, target_interval: str, start_date: Optional[date] = Query(None)):
     psql_ops = PostgresOperations()
 
     conf_path = Path(__file__).resolve().parent / "config.yml"
@@ -37,6 +39,6 @@ def get_candlesticks(symbol: str, target_interval: str):
     chosen_interval = search_suitable_interval(available_intervals=available_intervals,
                                                 target_interval=target_interval)
 
-    data = psql_ops.get_candlestick_data(conn, symbol, target_interval, chosen_interval)
+    data = psql_ops.get_candlestick_data(conn, symbol, target_interval, chosen_interval, start_date)
 
     return data
