@@ -4,7 +4,7 @@ binance:
 
 
 log:
-  path: "/Users/surya.bhattarai/Desktop/crypto_bot"
+  path: "logs/"
 
 postgres:
   host: timescaledb-primary
